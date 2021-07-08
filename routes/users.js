@@ -1,9 +1,10 @@
-const path = require('path');
 // Подключаем специальный метод Router для работы с маршрутами в express, на стороне сервера
 const router = require('express').Router();
 
 // Подключаем имеющие контроллеры для создания маршрутов
-const { getUsers, getUserId, createUser, updateProfile, updateProfileAvatar } = require(path.resolve('controllers/users'));
+const {
+  getUsers, getUserId, createUser, updateProfile, updateProfileAvatar,
+} = require('../controllers/users');
 
 // Получить всех пользователей
 router.get('/', getUsers);

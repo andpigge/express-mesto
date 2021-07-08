@@ -1,9 +1,10 @@
-const path = require('path');
 // Подключаем специальный метод Router для работы с маршрутами в express, на стороне сервера
 const router = require('express').Router();
 
 // Подключаю контролеры
-const { getCards, createCard, deleteCardId, addLikeCard, removeLikeCard } = require(path.resolve('controllers/cards'));
+const {
+  getCards, createCard, deleteCardId, addLikeCard, removeLikeCard,
+} = require('../controllers/cards');
 
 router.get('/', getCards);
 router.post('/', createCard);

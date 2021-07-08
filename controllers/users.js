@@ -1,101 +1,89 @@
-const path = require('path');
-// Обсолютный путь, относиительно рабочей папки
-const User = require(path.resolve('models/user'));
+const User = require('../models/user');
 
-// Заголовки, коды ошибок
-const { headers, 
-  VALID_ERROR_CODE, 
-  CAST_ERROR_CODE, 
-  SERVER_ERROR_CODE 
-} = require(path.resolve('utils/constaints.js'));
+// Коды ошибок
+const {
+  VALID_ERROR_CODE,
+  CAST_ERROR_CODE,
+  SERVER_ERROR_CODE,
+} = require('../utils/constaints');
 
 module.exports.getUsers = (req, res) => {
-  headers.json(res);
-
+  // Заголовки в express выставляются автоматически
   User.find({})
-  .then(users => res.send({ data: users }))
-  .catch(err => {
-    res.status(SERVER_ERROR_CODE).send({ messageError: 'Ошибка сервера' })
-  });
+    .then((users) => res.send({ data: users }))
+    .catch((err) => res.status(SERVER_ERROR_CODE).send({ messageError: err.message }));
 };
 
-module.exports.getUserId = (req, res, next) => {
+module.exports.getUserId = (req, res) => {
   // Вытаскиваем динамический userId
   const { userId } = req.params;
 
-  headers.json(res);
-
   User.findById(userId)
-  .then(user => res.send({ data: user }))
-  .catch(err => {
-    if (err.name === 'CastError') {
-      res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый пользователь не найден' })
-      return;
-    }
-    // console.log(err.name)
-    res.status(SERVER_ERROR_CODE).send({ messageError: 'Ошибка сервера' })
-  });
+    .then((user) => {
+      if (user) {
+        return res.send({ data: user });
+      }
+      return res.status(CAST_ERROR_CODE).send({ message: 'Пользователь не существует' });
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        return res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый пользователь не найден' });
+      }
+      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+    });
 };
 
 module.exports.createUser = (req, res) => {
-  // С помощью body-parser, легко вытаскиваем поля переданные в тело запросом POST, на стороне клиента
+  // С помощью body-parser, легко вытаскиваем поля переданные в тело запросом POST,
+  // на стороне клиента
   const { name, about, avatar } = req.body;
 
-  headers.json(res);
-
   User.create({ name, about, avatar })
-  .then(user => res.send({ data: user }))
-  .catch(err => {
-    if (err.name === 'ValidationError') {
-      res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при создании пользователя' })
-      return;
-    }
-    res.status(SERVER_ERROR_CODE).send({ messageError: 'Ошибка сервера' })
-  });
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при создании пользователя' });
+      }
+      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+    });
 };
 
 module.exports.updateProfile = (req, res) => {
   const { name, about, avatar } = req.body;
   const id = req.user._id;
 
-  headers.json(res);
-
   User.findByIdAndUpdate(id, { name, about, avatar }, {
     new: true, // обработчик then получит на вход обновлённую запись
     runValidators: true, // данные будут валидированы перед изменением
-    upsert: false // если пользователь не найден, он будет создан
+    // Просто для себя писал, чтобы не забыть в будущем что такой параметр существует
+    // upsert: false // если пользователь не найден, он будет создан
   })
-  .then(user => res.send({ data: user }))
-  .catch(err => {
-    if (err.name === 'ValidationError') {
-      res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при обновлении профиля' })
-      return;
-    }
-    if (err.name === 'CastError') {
-      res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый пользователь не найден' })
-      return;
-    }
-    res.status(SERVER_ERROR_CODE).send({ messageError: 'Ошибка сервера' })
-  });
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при обновлении профиля' });
+      }
+      if (err.name === 'CastError') {
+        return res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый пользователь не найден' });
+      }
+      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+    });
 };
 
 module.exports.updateProfileAvatar = (req, res) => {
   const { avatar } = req.body;
   const id = req.user._id;
 
-  headers.json(res);
-
   User.findByIdAndUpdate(id, { avatar }, {
     new: true, // обработчик then получит на вход обновлённую запись
     runValidators: true, // данные будут валидированы перед изменением
-    upsert: false // если пользователь не найден, он будет создан
+    // upsert: false // если пользователь не найден, он будет создан
   })
-  .then(user => res.send({ data: user }))
-  .catch(err => {
-    if (err.name === 'ValidationError') {
-      res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при обновлении аватара' })
-      return;
-    }
-    res.status(SERVER_ERROR_CODE).send({ messageError: 'Ошибка' })
-  });
-}
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при обновлении аватара' });
+      }
+      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+    });
+};
