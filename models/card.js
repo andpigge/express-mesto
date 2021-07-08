@@ -16,10 +16,9 @@ const cardSchema = new mongoose.Schema({
     ref: 'user',
     required: true,
   },
-  // Здесь возможна должна быть связь, но либо записывать связь, либо тип обьекта
   likes: {
     type: Array,
-    // type: mongoose.Schema.Types.ObjectId,
+    ref: 'user',
     default: [],
   },
   createdAt: {

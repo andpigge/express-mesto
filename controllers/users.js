@@ -11,7 +11,7 @@ module.exports.getUsers = (req, res) => {
   // Заголовки в express выставляются автоматически
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch((err) => res.status(SERVER_ERROR_CODE).send({ messageError: err.message }));
+    .catch((err) => res.status(SERVER_ERROR_CODE).send({ message: err.message }));
 };
 
 module.exports.getUserId = (req, res) => {
@@ -27,9 +27,9 @@ module.exports.getUserId = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый пользователь не найден' });
+        return res.status(CAST_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 
@@ -42,9 +42,9 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при создании пользователя' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при создании пользователя' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 
@@ -61,12 +61,12 @@ module.exports.updateProfile = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при обновлении профиля' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при обновлении профиля' });
       }
       if (err.name === 'CastError') {
-        return res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый пользователь не найден' });
+        return res.status(CAST_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 
@@ -82,8 +82,8 @@ module.exports.updateProfileAvatar = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при обновлении аватара' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при обновлении аватара' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };

@@ -15,7 +15,7 @@ const getCards = (req, res) => {
   Card.find({})
     .populate('users')
     .then((cards) => res.send({ data: cards }))
-    .catch((err) => res.status(SERVER_ERROR_CODE).send({ messageError: err.message }));
+    .catch((err) => res.status(SERVER_ERROR_CODE).send({ message: err.message }));
 };
 
 // ValidationError проверяется там где есть тело запроса body
@@ -29,13 +29,12 @@ const createCard = (req, res) => {
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные при создании карточки' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при создании карточки' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 
-// Намудрил я здесь раньше
 // CastError проверяется всегда где есть динамические данные в url запросе :id
 // Должна быть проверка на обработку 404 при динамические данных, данные могут прийти некорректные
 const deleteCardId = (req, res) => {
@@ -44,15 +43,17 @@ const deleteCardId = (req, res) => {
   Card.findByIdAndRemove(cardId)
     .then((card) => {
       if (card) {
-        return res.send({ message: 'Карточка успешна удалена' });
+        return res.send({ data: card });
       }
+      // В CAST_ERROR_CODE у меня код 404
       return res.status(CAST_ERROR_CODE).send({ message: 'Карточка не существует, либо была удалена' });
     })
     .catch((err) => {
+      // Я не нашел инфы по поводу обработки запросов на express, нам лишь показали пример
       if (err.name === 'CastError') {
-        return res.status(CAST_ERROR_CODE).send({ messageError: 'Карточка с указанным _id не найдена' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Карточка с указанным _id не найдена' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 
@@ -71,15 +72,15 @@ const addLikeCard = (req, res) => {
   )
     .then((card) => {
       if (card) {
-        return res.send({ message: 'Лайк успешно поставлен' });
+        return res.send({ data: card });
       }
       return res.status(CAST_ERROR_CODE).send({ message: 'Карточка не существует, либо была удалена' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные для постановки лайка.' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные для постановки лайка.' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 
@@ -98,15 +99,15 @@ const removeLikeCard = (req, res) => {
   )
     .then((card) => {
       if (card) {
-        return res.send({ message: 'Лайк успешно удален' });
+        return res.send({ data: card });
       }
       return res.status(CAST_ERROR_CODE).send({ message: 'Карточка не существует, либо была удалена' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(VALID_ERROR_CODE).send({ messageError: 'Переданы некорректные данные для снятия лайка.' });
+        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные для снятия лайка.' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ messageError: err.message });
+      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
     });
 };
 

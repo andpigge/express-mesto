@@ -43,9 +43,7 @@ app.use('/users', routerUsers);
 // Третий параметр, функция предварительной обработки, мидлвэа
 app.use('/cards', routerCards);
 // Если нет корректного маршрута
-app.get('*', (req, res) => {
-  res.status(CAST_ERROR_CODE).send({ messageError: 'Такого маршрута не существует' });
-});
+app.get('*', (req, res) => res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый ресурс не найден' }));
 
 // Ругается eslint на консоль, не знаю почему, выдает ошибку warning.
 app.listen(PORT/* , () => console.log(`Приложение запущенно на порту ${PORT}`) */);
