@@ -1,17 +1,10 @@
 const User = require('../models/user');
 
-// Коды ошибок
-const {
-  VALID_ERROR_CODE,
-  CAST_ERROR_CODE,
-  SERVER_ERROR_CODE,
-} = require('../utils/constaints');
-
 module.exports.getUsers = (req, res) => {
   // Заголовки в express выставляются автоматически
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch((err) => res.status(SERVER_ERROR_CODE).send({ message: err.message }));
+    .catch((err) => res.status(500).send({ message: err.message }));
 };
 
 module.exports.getUserId = (req, res) => {
@@ -23,13 +16,13 @@ module.exports.getUserId = (req, res) => {
       if (user) {
         return res.send({ data: user });
       }
-      return res.status(CAST_ERROR_CODE).send({ message: 'Пользователь не существует' });
+      return res.status(404).send({ message: 'Пользователь не существует' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(CAST_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' });
+        return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -42,9 +35,9 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при создании пользователя' });
+        return res.status(400).send({ message: 'Переданы некорректные данные при создании пользователя' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -55,18 +48,17 @@ module.exports.updateProfile = (req, res) => {
   User.findByIdAndUpdate(id, { name, about, avatar }, {
     new: true, // обработчик then получит на вход обновлённую запись
     runValidators: true, // данные будут валидированы перед изменением
-    // Просто для себя писал, чтобы не забыть в будущем что такой параметр существует
     // upsert: false // если пользователь не найден, он будет создан
   })
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при обновлении профиля' });
+        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля' });
       }
       if (err.name === 'CastError') {
-        return res.status(CAST_ERROR_CODE).send({ message: 'Запрашиваемый пользователь не найден' });
+        return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -82,8 +74,8 @@ module.exports.updateProfileAvatar = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при обновлении аватара' });
+        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении аватара' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };

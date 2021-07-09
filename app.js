@@ -7,11 +7,6 @@ const routerUsers = require('./routes/users');
 
 const routerCards = require('./routes/cards');
 
-// Коды ошибок
-const {
-  CAST_ERROR_CODE,
-} = require('./utils/constaints');
-
 const { PORT = 3000 } = process.env;
 
 const app = express();
@@ -43,7 +38,7 @@ app.use('/users', routerUsers);
 // Третий параметр, функция предварительной обработки, мидлвэа
 app.use('/cards', routerCards);
 // Если нет корректного маршрута
-app.get('*', (req, res) => res.status(CAST_ERROR_CODE).send({ messageError: 'Запрашиваемый ресурс не найден' }));
+app.use('*', (req, res) => res.status(404).send({ messageError: 'Запрашиваемый ресурс не найден' }));
 
 // Ругается eslint на консоль, не знаю почему, выдает ошибку warning.
 app.listen(PORT/* , () => console.log(`Приложение запущенно на порту ${PORT}`) */);

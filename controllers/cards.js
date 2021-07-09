@@ -1,13 +1,6 @@
 // Модель
 const Card = require('../models/card');
 
-// Коды ошибок
-const {
-  VALID_ERROR_CODE,
-  CAST_ERROR_CODE,
-  SERVER_ERROR_CODE,
-} = require('../utils/constaints');
-
 const getCards = (req, res) => {
   // Заголовки в express выставляются автоматически
 
@@ -15,7 +8,7 @@ const getCards = (req, res) => {
   Card.find({})
     .populate('users')
     .then((cards) => res.send({ data: cards }))
-    .catch((err) => res.status(SERVER_ERROR_CODE).send({ message: err.message }));
+    .catch((err) => res.status(500).send({ message: err.message }));
 };
 
 // ValidationError проверяется там где есть тело запроса body
@@ -24,19 +17,17 @@ const createCard = (req, res) => {
 
   const id = req.user._id;
 
-  // Задаем в третье поле обьекта id
+  // Третим параметром owner с id
   Card.create({ name, link, owner: id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные при создании карточки' });
+        return res.status(400).send({ message: 'Переданы некорректные данные при создании карточки' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
-// CastError проверяется всегда где есть динамические данные в url запросе :id
-// Должна быть проверка на обработку 404 при динамические данных, данные могут прийти некорректные
 const deleteCardId = (req, res) => {
   const { cardId } = req.params;
 
@@ -45,15 +36,13 @@ const deleteCardId = (req, res) => {
       if (card) {
         return res.send({ data: card });
       }
-      // В CAST_ERROR_CODE у меня код 404
-      return res.status(CAST_ERROR_CODE).send({ message: 'Карточка не существует, либо была удалена' });
+      return res.status(404).send({ message: 'Карточка не существует, либо была удалена' });
     })
     .catch((err) => {
-      // Я не нашел инфы по поводу обработки запросов на express, нам лишь показали пример
       if (err.name === 'CastError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Карточка с указанным _id не найдена' });
+        return res.status(400).send({ message: 'Карточка с указанным _id не найдена' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -74,13 +63,13 @@ const addLikeCard = (req, res) => {
       if (card) {
         return res.send({ data: card });
       }
-      return res.status(CAST_ERROR_CODE).send({ message: 'Карточка не существует, либо была удалена' });
+      return res.status(404).send({ message: 'Карточка не существует, либо была удалена' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные для постановки лайка.' });
+        return res.status(400).send({ message: 'Переданы некорректные данные для постановки лайка.' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
@@ -101,13 +90,13 @@ const removeLikeCard = (req, res) => {
       if (card) {
         return res.send({ data: card });
       }
-      return res.status(CAST_ERROR_CODE).send({ message: 'Карточка не существует, либо была удалена' });
+      return res.status(404).send({ message: 'Карточка не существует, либо была удалена' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(VALID_ERROR_CODE).send({ message: 'Переданы некорректные данные для снятия лайка.' });
+        return res.status(400).send({ message: 'Переданы некорректные данные для снятия лайка.' });
       }
-      return res.status(SERVER_ERROR_CODE).send({ message: err.message });
+      return res.status(500).send({ message: err.message });
     });
 };
 
