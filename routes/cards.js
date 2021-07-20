@@ -1,13 +1,21 @@
 // Подключаем специальный метод Router для работы с маршрутами в express, на стороне сервера
 const router = require('express').Router();
 
+// Валидация тела запроса от клиента
+const { celebrate, Joi } = require('celebrate');
+
 // Подключаю контролеры
 const {
   getCards, createCard, deleteCardId, addLikeCard, removeLikeCard,
 } = require('../controllers/cards');
 
 router.get('/', getCards);
-router.post('/', createCard);
+router.post('/', celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().required().min(2).max(30),
+    link: Joi.string().required(),
+  }),
+}), createCard);
 router.delete('/:cardId', deleteCardId);
 
 // Другие роуты.

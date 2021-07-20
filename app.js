@@ -6,6 +6,12 @@ const mongoose = require('mongoose');
 // npm i body-parser
 // const bodyParser = require('body-parser');
 
+// Обработка ошибок
+const { errors } = require('celebrate');
+
+// Позволяет без капчи зашитится от автоматических входов
+const rateLimit = require('express-rate-limit');
+
 // Позволяет удобно вытаскивать куки
 const cookieParser = require('cookie-parser');
 
@@ -16,12 +22,6 @@ const routerCards = require('./routes/cards');
 const { PORT = 3000 } = process.env;
 
 const app = express();
-
-// Мидлвэа для защиты маршрутов
-const { auth } = require('./middlewares/auth');
-
-// Мидлвэа центральный обрабртчик ошибок
-const error = require('./middlewares/errors');
 
 // Запусть монго сервисы mongod
 // Сгенерировать свой собственный jwt
@@ -40,6 +40,13 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useFindAndModify: false,
   useUnifiedTopology: true,
 });
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // за 15 минут
+  max: 100, // можно совершить максимум 100 запросов с одного IP
+});
+
+app.use(limiter);
 
 // Настройки body-parser. Используем с помощью use как middleware
 // Существует уже в новой версии express встроенный парсер
@@ -64,11 +71,26 @@ app.use(cookieParser());
 // Экспортирую маршруты
 app.use('/users', routerUsers);
 // Третий параметр, функция предварительной обработки, мидлвэа
-app.use('/cards', auth, routerCards);
+app.use('/cards', /* auth, */ routerCards);
 // Если нет корректного маршрута
 app.use('*', (req, res) => res.status(404).send({ messageError: 'Запрашиваемый ресурс не найден' }));
 
-// app.use(error());
+// Обработка ошибок celebrate
+app.use(errors());
+
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+
+  res
+    .status(statusCode)
+    .send({
+      // проверяем статус и выставляем сообщение в зависимости от него
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+  next();
+});
 
 // Ругается eslint на консоль, не знаю почему, выдает ошибку warning.
 app.listen(PORT/* , () => console.log(`Приложение запущенно на порту ${PORT}`) */);

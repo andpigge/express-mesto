@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 
 const { JWT_SECRET } = process.env;
 
+const Forbidden = require('../errorsHandler/Forbidden');
+const UnauthorizedError = require('../errorsHandler/UnauthorizedError');
+
 // Мидлвэа для защиты маршрутов. Если пользователь не зашел
 module.exports.auth = (req, res, next) => {
   // Приходит от сервера с заголовками. authorization: TOKEN. Если конкретный пользователь вошел,
@@ -11,7 +14,7 @@ module.exports.auth = (req, res, next) => {
 
   // убеждаемся, что он есть или начинается с Bearer
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res.status(401).send({ message: 'Необходимо авторизироваться' });
+    next(new UnauthorizedError('Необходимо авторизироваться'));
   }
 
   const token = authorization.replace('Bearer ', '');
@@ -21,7 +24,7 @@ module.exports.auth = (req, res, next) => {
   try {
     payload = jwt.verify(token, JWT_SECRET);
   } catch (err) {
-    return res.status(403).send({ message: 'Необходимо авторизироваться' });
+    next(new Forbidden('Необходимо авторизироваться'));
   }
 
   req.user = payload; // записываем пейлоуд в объект запроса

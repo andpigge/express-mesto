@@ -6,6 +6,9 @@ const bcrypt = require('bcryptjs');
 // Простой пакет для валидации данных
 const validator = require('validator');
 
+// Ошибки
+const UnauthorizedError = require('../errorsHandler/UnauthorizedError');
+
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -22,6 +25,12 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    validate: {
+      validator(url) {
+        return /https?:\/\/[\w-]+.[a-z.]+[\/*[a-z#]+]?/gim.test(url);
+      },
+      message: 'Неккоректный url адрес',
+    },
   },
   email: {
     type: String,
@@ -61,18 +70,18 @@ const userSchema = new mongoose.Schema({
 
 // Функция findUserByCredentials не должна быть стрелочной. Забываю
 // Собственный метод. Поиск пользователя
-userSchema.statics.findUserByCredentials = function(email, password) {
+userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password, next) {
   // Здесь нужен пароль
   return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error('Неправильные почта или пароль'));
+        return next(new UnauthorizedError('Неправильные почта или пароль'));
       }
 
       return bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            return Promise.reject(new Error('Неправильные почта или пароль'));
+            return next(new UnauthorizedError('Неправильные почта или пароль'));
           }
           return user;
         });
@@ -82,7 +91,7 @@ userSchema.statics.findUserByCredentials = function(email, password) {
 // Хук сработает перед тем как сохранить данные в бд,
 // для коректного валидирования пароля на уровне схемы.
 // Срабатывает при создании и обновлении схемы
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function fun(next) {
   if (!this.isModified('password')) return next();
 
   return bcrypt.hash(this.password, 10)

@@ -5,14 +5,19 @@ const User = require('../models/user');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
 
-module.exports.getUsers = (req, res) => {
+// Ошибки
+const NotFoundError = require('../errorsHandler/NotFoundError');
+const BadRequest = require('../errorsHandler/BadRequest');
+const Conflict = require('../errorsHandler/Conflict');
+
+module.exports.getUsers = (req, res, next) => {
   // Заголовки в express выставляются автоматически
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => next(err.message));
 };
 
-module.exports.getUserId = (req, res) => {
+module.exports.getUserId = (req, res, next) => {
   // Вытаскиваем динамический userId
   const { userId } = req.params;
 
@@ -21,51 +26,44 @@ module.exports.getUserId = (req, res) => {
       if (user) {
         return res.send({ data: user });
       }
-      return res.status(404).send({ message: 'Пользователь не существует' });
+      return next(new NotFoundError('Пользователь не существует'));
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
+        next(new BadRequest('Запрашиваемый пользователь не найден'));
       }
-      return res.status(500).send({ message: err.message });
+      next(err.message);
     });
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = async (req, res, next) => {
   // С помощью body-parser, легко вытаскиваем поля переданные в тело запросом POST,
   // на стороне клиента
-  const {
-    name,
-    about,
-    avatar,
-    email,
-    password,
-  } = req.body;
-  // const body = { ...req.body };
+  const body = { ...req.body };
 
   // Пароль хэшируется в момент сохранения в БД, в моделе, хуком.
-  User.create({
-    name,
-    about,
-    avatar,
-    email,
-    password,
-  })
-    .then((user) => res.send({
-      name: user.name,
-      about: user.about,
-      avatar: user.avatar,
-      email: user.email,
-    }))
+  await User.create(body)
+    .then((user) => {
+      res.send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      });
+    })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при создании пользователя' });
+        next(new BadRequest('Переданы некорректные данные при создании пользователя'));
       }
-      return res.status(500).send({ message: err.message });
+      // Не хочу два раза запрос к БД делать, думаю это неправильно
+      if (err.name === 'MongoError') {
+        next(new Conflict('Пользователь с таким Email уже существует'));
+      }
+      next(err.message);
     });
 };
 
-module.exports.updateProfile = (req, res) => {
+module.exports.updateProfile = (req, res, next) => {
   const { name, about, avatar } = req.body;
   const id = req.user._id;
 
@@ -77,16 +75,16 @@ module.exports.updateProfile = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении профиля' });
+        next(new BadRequest('Переданы некорректные данные при обновлении профиля'));
       }
       if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Запрашиваемый пользователь не найден' });
+        next(new BadRequest('Запрашиваемый пользователь не найден'));
       }
-      return res.status(500).send({ message: err.message });
+      next(err.message);
     });
 };
 
-module.exports.getProfile = (req, res) => {
+module.exports.getProfile = (req, res, next) => {
   const id = req.user._id;
 
   User.findById(id)
@@ -94,12 +92,12 @@ module.exports.getProfile = (req, res) => {
       if (user) {
         return res.send({ data: user });
       }
-      return res.status(404).send({ message: 'Пользователь не существует, либо был удален' });
+      return next(new NotFoundError('Пользователь не существует, либо был удален'));
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => next(err.message));
 };
 
-module.exports.updateProfileAvatar = (req, res) => {
+module.exports.updateProfileAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const id = req.user._id;
 
@@ -111,14 +109,14 @@ module.exports.updateProfileAvatar = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Переданы некорректные данные при обновлении аватара' });
+        next(new BadRequest('Переданы некорректные данные при обновлении аватара'));
       }
-      return res.status(500).send({ message: err.message });
+      next(err.message);
     });
 };
 
 // Если пользователь зашел успешно, создаю token, и сохраняю его в куки
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   // Применил собственный метод
@@ -130,8 +128,16 @@ module.exports.login = (req, res) => {
         { expiresIn: '7d' });
 
       // Куки хранятся 7 дней. httpOnly не доступен из js
-      res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true });
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+        sameSite: true, // кука доступна только на одной хостинге
+      });
       return res.send({ token: req.cookies.jwt });
     })
-    .catch((err) => res.status(401).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные при создании пользователя'));
+      }
+    });
 };
