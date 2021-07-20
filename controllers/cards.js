@@ -14,6 +14,7 @@ const getCards = (req, res) => {
 // ValidationError проверяется там где есть тело запроса body
 const createCard = (req, res) => {
   const { name, link } = req.body;
+  // const data = { ...req.body };
 
   const id = req.user._id;
 
@@ -30,19 +31,27 @@ const createCard = (req, res) => {
 
 const deleteCardId = (req, res) => {
   const { cardId } = req.params;
+  const id = req.user._id;
 
-  Card.findByIdAndRemove(cardId)
+  Card.findById(cardId)
     .then((card) => {
-      if (card) {
-        return res.send({ data: card });
+      if (!card) {
+        return res.status(404).send({ message: 'Карточка не существует, либо была удалена' });
       }
-      return res.status(404).send({ message: 'Карточка не существует, либо была удалена' });
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Карточка с указанным _id не найдена' });
+
+      // Если это карточка не пользователя, выведем ему сообщение
+      if (card.owner !== id) {
+        return res.status(403).send({ message: 'Карточка не существует, либо была удалена' });
       }
-      return res.status(500).send({ message: err.message });
+
+      Card.findByIdAndRemove(cardId)
+        .then((card) => res.send({ data: card }))
+        .catch((err) => {
+          if (err.name === 'CastError') {
+            return res.status(400).send({ message: 'Карточка с указанным _id не найдена' });
+          }
+          return res.status(500).send({ message: err.message });
+        });
     });
 };
 
