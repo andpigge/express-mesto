@@ -34,30 +34,30 @@ const createCard = (req, res, next) => {
 };
 
 // Не получилось использовать asunc await, использую Callback Hell
-const deleteCardId = async (req, res, next) => {
+const deleteCardId = (req, res, next) => {
   const { cardId } = req.params;
-  const id = '60f818609ecb090a2820838c';
+  const id = req.user._id;
 
-  await Card.findById(cardId)
+  Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        throw new NotFoundError('Карточка не существует, либо была удалена');
+        next(new NotFoundError('Карточка не существует, либо была удалена'));
       }
 
       // Если это карточка не пользователя, выведем ему сообщение
-      if (card.owner._id.toString() !== id) {
-        throw new Forbidden('Нельзя удалить карточку другого пользователя');
+      if (card.owner._id.toString() === id) {
+        Card.findByIdAndRemove(cardId)
+          .then((cardRemove) => {
+            res.send({ data: cardRemove });
+          })
+          .catch((err) => {
+            if (err.name === 'CastError') {
+              next(new BadRequest('Карточка с указанным _id не найдена'));
+            }
+            next(err.message);
+          });
       }
-    })
-    .catch(next);
-
-  await Card.findByIdAndRemove(cardId)
-    .then((cardRemove) => res.send({ data: cardRemove }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequest('Карточка с указанным _id не найдена'));
-      }
-      next(err.message);
+      next(new Forbidden('Нельзя удалить карточку другого пользователя'));
     });
 };
 

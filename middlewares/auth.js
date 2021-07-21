@@ -17,11 +17,11 @@ module.exports.auth = (req, res, next) => {
     next(new UnauthorizedError('Необходимо авторизироваться'));
   }
 
-  const token = authorization.replace('Bearer ', '');
   let payload;
 
   // Вместо if
   try {
+    const token = authorization.replace('Bearer ', '');
     payload = jwt.verify(token, JWT_SECRET);
   } catch (err) {
     next(new Forbidden('Необходимо авторизироваться'));

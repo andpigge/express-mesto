@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 
-const { NODE_ENV, JWT_SECRET } = process.env;
+const { NODE_ENV, JWT_SECRET = 'dev-secret' } = process.env;
 
 // Ошибки
 const NotFoundError = require('../errorsHandler/NotFoundError');

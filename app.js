@@ -4,6 +4,9 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 
+// Защита заголовков
+const helmet = require('helmet');
+
 // Обработка ошибок
 const { errors } = require('celebrate');
 
@@ -42,6 +45,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// Вроде как все по умолчанию выставленно, не очень разбираюсь в заголовках
+app.use(helmet());
+
 // Подключение встроенного парсера в express, чтобы вытаскивать из тела данные
 // Вот так: const { name, about, avatar } = req.body;
 app.use(express.json());
@@ -51,7 +57,7 @@ app.use(cookieParser());
 
 // Экспортирую маршруты
 app.use('/users', auth, routerUsers);
-app.use('/cards', /* auth, */ routerCards);
+app.use('/cards', auth, routerCards);
 app.use('/', routerAuth);
 // Если нет корректного маршрута
 app.use((req, res, next) => next(new NotFoundError('Запрашиваемый ресурс не найден')));
