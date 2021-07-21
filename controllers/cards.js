@@ -33,21 +33,23 @@ const createCard = (req, res, next) => {
     });
 };
 
+// Не получилось использовать asunc await, использую Callback Hell
 const deleteCardId = async (req, res, next) => {
   const { cardId } = req.params;
-  const id = req.user._id;
+  const id = '60f818609ecb090a2820838c';
 
   await Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        next(new NotFoundError('Карточка не существует, либо была удалена'));
+        throw new NotFoundError('Карточка не существует, либо была удалена');
       }
 
       // Если это карточка не пользователя, выведем ему сообщение
-      if (card.owner !== id) {
-        next(new Forbidden('Карточка другого пользователя'));
+      if (card.owner._id.toString() !== id) {
+        throw new Forbidden('Нельзя удалить карточку другого пользователя');
       }
-    });
+    })
+    .catch(next);
 
   await Card.findByIdAndRemove(cardId)
     .then((cardRemove) => res.send({ data: cardRemove }))

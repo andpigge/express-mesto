@@ -49,13 +49,15 @@ module.exports.createUser = async (req, res, next) => {
         about: user.about,
         avatar: user.avatar,
         email: user.email,
+        _id: user._id,
       });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         next(new BadRequest('Переданы некорректные данные при создании пользователя'));
       }
-      // Не хочу два раза запрос к БД делать, думаю это неправильно
+      // Спасибо за уточнение
+      // err.name = MongoError и err.code = 11000
       if (err.name === 'MongoError') {
         next(new Conflict('Пользователь с таким Email уже существует'));
       }

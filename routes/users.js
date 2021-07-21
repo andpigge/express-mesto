@@ -4,22 +4,27 @@ const router = require('express').Router();
 // Валидация тела запроса от клиента
 const { celebrate, Joi } = require('celebrate');
 
-// Мидлвэа для защиты маршрутов
-const { auth } = require('../middlewares/auth');
+// Подключаю свою функцию валидации url адресса для celebrate
+const validUrl = require('../utils/validUrl');
 
 // Подключаем имеющие контроллеры для создания маршрутов
 const {
-  getUsers, getUserId, createUser, updateProfile, getProfile, updateProfileAvatar, login,
+  getUsers, getUserId, updateProfile, getProfile, updateProfileAvatar,
 } = require('../controllers/users');
 
-router.get('/me', auth, getProfile);
+router.get('/me', getProfile);
 
 // Получить всех пользователей
-router.get('/', auth, getUsers);
+router.get('/', getUsers);
+
 // Получить пользователя по id
-router.get('/:userId', auth, getUserId);
-// Создать пользователя
-// router.post('/', createUser);
+// Валидировать id нужно по шестнадцатеричной системе счисления, hex формат. Ровно 24 символа
+// celebrate должен заворачивать такие запросы до передачи их контроллеру
+router.get('/:userId', celebrate({
+  body: Joi.object().keys({
+    id: Joi.string().hex().length(24),
+  }),
+}), getUserId);
 
 // Другие роуты.
 // Обновляет профиль
@@ -27,28 +32,14 @@ router.patch('/me', celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
     about: Joi.string().required().min(2).max(30),
-    avatar: Joi.string(),
+    avatar: Joi.string().custom(validUrl),
   }),
-}), auth, updateProfile);
+}), updateProfile);
 // Обновляет аватар, частично обновляем профиль
 router.put('/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required(),
+    avatar: Joi.string().required().custom(validUrl),
   }),
-}), auth, updateProfileAvatar);
-
-// Маршруты регистрация и аутентификации
-router.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-  }),
-}), login);
-router.post('/signup', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-  }),
-}), createUser);
+}), updateProfileAvatar);
 
 module.exports = router;
