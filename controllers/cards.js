@@ -44,20 +44,20 @@ const deleteCardId = (req, res, next) => {
         next(new NotFoundError('Карточка не существует, либо была удалена'));
       }
 
-      // Если это карточка не пользователя, выведем ему сообщение
+      // Если это карточка пользователя, удалим ее
       if (card.owner._id.toString() === id) {
         Card.findByIdAndRemove(cardId)
-          .then((cardRemove) => {
-            res.send({ data: cardRemove });
-          })
+          .then((cardRemove) => res.send({ data: cardRemove }))
           .catch((err) => {
             if (err.name === 'CastError') {
               next(new BadRequest('Карточка с указанным _id не найдена'));
             }
             next(err.message);
           });
+      } else {
+        // Если это карточка не пользователя, выведем ему сообщение
+        next(new Forbidden('Нельзя удалить карточку другого пользователя'));
       }
-      next(new Forbidden('Нельзя удалить карточку другого пользователя'));
     });
 };
 

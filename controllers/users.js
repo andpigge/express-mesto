@@ -37,8 +37,6 @@ module.exports.getUserId = (req, res, next) => {
 };
 
 module.exports.createUser = async (req, res, next) => {
-  // С помощью body-parser, легко вытаскиваем поля переданные в тело запросом POST,
-  // на стороне клиента
   const body = { ...req.body };
 
   // Пароль хэшируется в момент сохранения в БД, в моделе, хуком.
@@ -56,7 +54,6 @@ module.exports.createUser = async (req, res, next) => {
       if (err.name === 'ValidationError') {
         next(new BadRequest('Переданы некорректные данные при создании пользователя'));
       }
-      // Спасибо за уточнение
       // err.name = MongoError и err.code = 11000
       if (err.name === 'MongoError') {
         next(new Conflict('Пользователь с таким Email уже существует'));
@@ -122,7 +119,7 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
 
   // Применил собственный метод
-  User.findUserByCredentials(email, password)
+  User.findUserByCredentials(email, password, next)
     .then((user) => {
       // jwt.sign - создать токен. Первый параметр id, для хэша, второй токен, третий время жизни
       const token = jwt.sign({ _id: user._id },

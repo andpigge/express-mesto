@@ -19,6 +19,9 @@ const cookieParser = require('cookie-parser');
 // Ошибки
 const NotFoundError = require('./errorsHandler/NotFoundError');
 
+// Мидлвэа, центральный обработчик ошибок
+const errHandler = require('./middlewares/errHandler');
+
 // Маршруты
 const routerUsers = require('./routes/users');
 const routerCards = require('./routes/cards');
@@ -57,7 +60,7 @@ app.use(cookieParser());
 
 // Экспортирую маршруты
 app.use('/users', auth, routerUsers);
-app.use('/cards', auth, routerCards);
+app.use('/cards', /* auth, */ routerCards);
 app.use('/', routerAuth);
 // Если нет корректного маршрута
 app.use((req, res, next) => next(new NotFoundError('Запрашиваемый ресурс не найден')));
@@ -65,19 +68,8 @@ app.use((req, res, next) => next(new NotFoundError('Запрашиваемый �
 // Обработка ошибок celebrate
 app.use(errors());
 
-app.use((err, req, res, next) => {
-  const { statusCode = 500, message } = err;
-
-  res
-    .status(statusCode)
-    .send({
-      // проверяем статус и выставляем сообщение в зависимости от него
-      message: statusCode === 500
-        ? 'На сервере произошла ошибка'
-        : message,
-    });
-  next();
-});
+// Подключаю ко всем маршрутам, центральный обработчик ошибок
+app.use(errHandler);
 
 // Ругается eslint на консоль, не знаю почему, выдает ошибку warning.
 app.listen(PORT/* , () => console.log(`Приложение запущенно на порту ${PORT}`) */);

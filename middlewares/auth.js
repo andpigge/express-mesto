@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-const { JWT_SECRET } = process.env;
+// dev-secret в случае если .env отсутсвует, или в нем нет токена, при разработке
+const { JWT_SECRET = 'dev-secret' } = process.env;
 
 const Forbidden = require('../errorsHandler/Forbidden');
 const UnauthorizedError = require('../errorsHandler/UnauthorizedError');
