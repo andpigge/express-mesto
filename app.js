@@ -60,7 +60,7 @@ app.use(cookieParser());
 
 // Экспортирую маршруты
 app.use('/users', auth, routerUsers);
-app.use('/cards', /* auth, */ routerCards);
+app.use('/cards', auth, routerCards);
 app.use('/', routerAuth);
 // Если нет корректного маршрута
 app.use((req, res, next) => next(new NotFoundError('Запрашиваемый ресурс не найден')));
