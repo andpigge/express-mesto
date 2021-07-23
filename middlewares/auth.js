@@ -25,7 +25,7 @@ module.exports.auth = (req, res, next) => {
     const token = authorization.replace('Bearer ', '');
     payload = jwt.verify(token, JWT_SECRET);
   } catch (err) {
-    next(new Forbidden('Необходимо авторизироваться'));
+    next(new UnauthorizedError('Необходимо авторизироваться'));
   }
 
   req.user = payload; // записываем пейлоуд в объект запроса
