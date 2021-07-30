@@ -30,6 +30,9 @@ const routerAuth = require('./routes/auth');
 // Мидлвэа для защиты маршрутов
 const { auth } = require('./middlewares/auth');
 
+// Логи ошибок, запись ошибок в файл
+const { requestLogger, errorLoger } = require('./middlewares/logger');
+
 const { PORT = 3000 } = process.env;
 
 const app = express();
@@ -58,12 +61,18 @@ app.use(express.json());
 // Подключаем cookieParser как мидлвэа
 app.use(cookieParser());
 
+// Логгер запросов подключаю до всех маршрутов.
+app.use(requestLogger);
+
 // Экспортирую маршруты
 app.use('/users', auth, routerUsers);
 app.use('/cards', auth, routerCards);
 app.use('/', routerAuth);
 // Если нет корректного маршрута
 app.use((req, res, next) => next(new NotFoundError('Запрашиваемый ресурс не найден')));
+
+// Логгер оштбок. Подключаю после всех маршрутов, но до обработки ошибок
+app.use(errorLoger);
 
 // Обработка ошибок celebrate
 app.use(errors());
